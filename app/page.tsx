@@ -1,7 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
+import { auth } from "@/app/api/auth/[...nextauth]/auth";
 import { Button } from "@/components/ui/button";
 import { Timeline } from "@/app/components/ui/timeline";
+import { ArrowRight } from "lucide-react";
 
 // Mock data for demo purposes
 const timelineData = [
@@ -25,7 +27,10 @@ const timelineData = [
   },
 ];
 
-export default function Home() {
+export default async function Home() {
+  const session = await auth();
+  const isAuthenticated = !!session?.user;
+
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
@@ -38,16 +43,33 @@ export default function Home() {
             Create collections of your memories, organize them by categories, and share your story with the world.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/collections">
-              <Button size="lg" className="rounded-full">
-                Get Started
-              </Button>
-            </Link>
-            <Link href="/collections/demo">
-              <Button size="lg" variant="outline" className="rounded-full">
-                View Demo
-              </Button>
-            </Link>
+            {isAuthenticated ? (
+              <>
+                <Link href="/collections">
+                  <Button size="lg" className="rounded-full">
+                    My Collections
+                  </Button>
+                </Link>
+                <Link href="/collections/new">
+                  <Button size="lg" variant="outline" className="rounded-full">
+                    Create New Collection
+                  </Button>
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link href="/auth/signup">
+                  <Button size="lg" className="rounded-full">
+                    Get Started
+                  </Button>
+                </Link>
+                <Link href="/collections/demo">
+                  <Button size="lg" variant="outline" className="rounded-full">
+                    View Demo
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </section>
@@ -88,16 +110,45 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Demo Timeline Section */}
-      <section className="py-16 px-4">
-        <div className="container mx-auto">
-          <h2 className="text-3xl font-bold mb-4 text-center">See It in Action</h2>
-          <p className="text-center mb-12 text-muted-foreground max-w-2xl mx-auto">
-            Scroll through this demo timeline to see how your memories will look.
-          </p>
-          <Timeline data={timelineData} />
-        </div>
-      </section>
+      {/* Personalized or Demo Section */}
+      {isAuthenticated ? (
+        <section className="py-16 px-4">
+          <div className="container mx-auto">
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-3xl font-bold">Welcome Back, {session?.user?.name || 'Friend'}!</h2>
+              <Link href="/collections">
+                <Button className="rounded-full gap-1">
+                  View All Collections
+                  <ArrowRight className="h-4 w-4 ml-1" />
+                </Button>
+              </Link>
+            </div>
+            <div className="bg-card rounded-lg p-8 shadow-sm border">
+              <p className="text-xl mb-6">
+                Continue building your memory timelines or create a new collection to preserve more moments.
+              </p>
+              <div className="flex flex-wrap gap-4">
+                <Link href="/collections">
+                  <Button variant="outline">My Collections</Button>
+                </Link>
+                <Link href="/collections/new">
+                  <Button>New Collection</Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+      ) : (
+        <section className="py-16 px-4">
+          <div className="container mx-auto">
+            <h2 className="text-3xl font-bold mb-4 text-center">See It in Action</h2>
+            <p className="text-center mb-12 text-muted-foreground max-w-2xl mx-auto">
+              Scroll through this demo timeline to see how your memories will look.
+            </p>
+            <Timeline data={timelineData} />
+          </div>
+        </section>
+      )}
     </div>
   );
 }
